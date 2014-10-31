@@ -39,7 +39,7 @@ public class TestClient {
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
-                System.out.println("client 1 closed "+code+", "+reason+", "+remote);
+                System.out.println("client0 closed "+code+", "+reason+", "+remote);
             }
         };
 
@@ -72,12 +72,9 @@ public class TestClient {
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
-                System.out.println("client 1 closed "+code+", "+reason+", "+remote);
+                System.out.println("client1 closed "+code+", "+reason+", "+remote);
             }
         };
-
-        client1.connectBlocking();
-        client0.connectBlocking();
     }
 
     public void stop() {
@@ -89,13 +86,13 @@ public class TestClient {
     public static void main(String[] args) throws IOException, InterruptedException {
         TestClient tester = new TestClient();
         tester.test();
-        new Thread(() -> {
-            try {
-                Thread.sleep(2000);
-                tester.stop();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
+//        new Thread(() -> {
+//            try {
+//                Thread.sleep(2000);
+//                tester.stop();
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//        }).start();
     }
 }

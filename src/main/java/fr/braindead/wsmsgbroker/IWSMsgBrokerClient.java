@@ -17,6 +17,8 @@ public interface IWSMsgBrokerClient {
 
     void closeBlocking() throws InterruptedException;
 
+    void setAutoReconnectTiming(int ms);
+
     void send(Object data, String dest);
 
     void send(Object data, String[] dest);
