@@ -1,4 +1,4 @@
-package fr.braindead.wsmsgbroker.client;
+package fr.braindead.wsmsgbroker;
 
 /**
  * Created by leiko on 30/10/14.

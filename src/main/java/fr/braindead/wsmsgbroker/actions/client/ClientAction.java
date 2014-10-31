@@ -1,7 +1,7 @@
 package fr.braindead.wsmsgbroker.actions.client;
 
 import com.google.gson.JsonObject;
-import fr.braindead.wsmsgbroker.client.Client;
+import fr.braindead.wsmsgbroker.WSMsgBrokerClient;
 import org.java_websocket.client.WebSocketClient;
 
 /**
@@ -9,5 +9,5 @@ import org.java_websocket.client.WebSocketClient;
  */
 public interface ClientAction {
 
-    void execute(Client client, WebSocketClient ws, JsonObject msg);
+    void execute(WSMsgBrokerClient client, WebSocketClient ws, JsonObject msg);
 }

@@ -1,6 +1,6 @@
 package fr.braindead.wsmsgbroker.callback;
 
-import fr.braindead.wsmsgbroker.client.Response;
+import fr.braindead.wsmsgbroker.Response;
 
 /**
  * Created by leiko on 30/10/14.
