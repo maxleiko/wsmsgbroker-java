@@ -9,13 +9,7 @@ public interface IWSMsgBrokerClient {
 
     String getId();
 
-    void connect();
-
-    void connectBlocking() throws InterruptedException;
-
     void close();
-
-    void closeBlocking() throws InterruptedException;
 
     void setAutoReconnectTiming(int ms);
 

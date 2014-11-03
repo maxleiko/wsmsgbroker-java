@@ -59,6 +59,7 @@ public class TestClient {
             @Override
             public void onMessage(Object msg, Response res) {
                 System.out.println("client1> "+msg);
+                System.out.println(msg.getClass().getTypeName());
                 if (res != null) {
                     res.send("bar!");
                 }

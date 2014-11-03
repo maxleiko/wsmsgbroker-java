@@ -87,26 +87,10 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
     }
 
     @Override
-    public void connect() {
-        this.client.connect();
-    }
-
-    @Override
-    public void connectBlocking() throws InterruptedException {
-        this.client.connectBlocking();
-    }
-
-    @Override
     public void close() {
+        scheduledThreadPool.shutdownNow();
         if (this.client != null) {
             this.client.close();
-        }
-    }
-
-    @Override
-    public void closeBlocking() throws InterruptedException {
-        if (this.client != null) {
-            this.client.closeBlocking();
         }
     }
 
@@ -175,7 +159,7 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
 
     @Override
     public void send(Object data, String dest, AnswerCallback callback) {
-        this.send(data, new String[]{dest}, callback);
+        this.send(data, new String[] {dest}, callback);
     }
 
     @Override
