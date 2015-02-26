@@ -146,11 +146,17 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
 
     @Override
     public void send(Object data, String dest) {
+        if (data == null) {
+            throw new IllegalArgumentException("data cannot be null");
+        }
         this.send(data, new String[]{dest});
     }
 
     @Override
     public void send(Object data, String[] dest) {
+        if (data == null) {
+            throw new IllegalArgumentException("data cannot be null");
+        }
         Send s = new Send();
         s.setMessage(data);
         s.setDest(dest);
@@ -159,11 +165,17 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
 
     @Override
     public void send(Object data, String dest, AnswerCallback callback) {
+        if (data == null) {
+            throw new IllegalArgumentException("data cannot be null");
+        }
         this.send(data, new String[] {dest}, callback);
     }
 
     @Override
     public void send(Object data, String[] dest, AnswerCallback callback) {
+        if (data == null) {
+            throw new IllegalArgumentException("data cannot be null");
+        }
         Send s = new Send();
         s.setMessage(data);
         s.setDest(dest);

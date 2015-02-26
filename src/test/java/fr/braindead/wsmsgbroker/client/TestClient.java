@@ -23,7 +23,7 @@ public class TestClient {
             @Override
             public void onRegistered(String id) {
                 System.out.println("Client0 registered");
-                this.send(42, "client1", (from, answer) -> System.out.println("client0 got answer from " + from + "> " + answer));
+                this.send(null, "client1", (from, answer) -> System.out.println("client0 got answer from " + from + "> " + answer));
             }
 
             @Override
