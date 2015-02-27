@@ -7,6 +7,7 @@ import java.io.IOException;
 
 /**
  * Created by leiko on 30/10/14.
+ *
  */
 public class TestClient {
 
@@ -22,13 +23,13 @@ public class TestClient {
 
             @Override
             public void onRegistered(String id) {
-                System.out.println("Client0 registered");
-                this.send(null, "client1", (from, answer) -> System.out.println("client0 got answer from " + from + "> " + answer));
+                this.send("0", "client1");
             }
 
             @Override
             public void onMessage(Object msg, Response res) {
                 System.out.println("client0> "+msg);
+                this.send("0", "client1");
             }
 
             @Override
@@ -39,30 +40,26 @@ public class TestClient {
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
-                System.out.println("client0 closed "+code+", "+reason+", "+remote);
+                System.out.println("client0 closed " + code + ", " + reason + ", " + remote);
             }
         };
 
         client1 = new WSMsgBrokerClient("client1", "localhost", 9050) {
             @Override
             public void onUnregistered(String id) {
-                System.out.println(id+" unregistered");
+                System.out.println(id + " unregistered");
                 this.close();
             }
 
             @Override
             public void onRegistered(String id) {
-                System.out.println("Client1 registered");
-                client0.send(new int[] {42, 3}, "client1");
+                this.send("1", "client0");
             }
 
             @Override
             public void onMessage(Object msg, Response res) {
                 System.out.println("client1> "+msg);
-                System.out.println(msg.getClass().getTypeName());
-                if (res != null) {
-                    res.send("bar!");
-                }
+                this.send("1", "client0");
             }
 
             @Override

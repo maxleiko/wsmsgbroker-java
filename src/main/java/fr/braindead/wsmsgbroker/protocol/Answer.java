@@ -44,4 +44,15 @@ public class Answer {
     public void setTo(String to) {
         this.to = to;
     }
+
+    @Override
+    public String toString() {
+        return "Answer { " +
+                "action="+action+", " +
+                "ack="+ack+", " +
+                "message="+message+", " +
+                "from="+from+", " +
+                "to="+to+
+                " }";
+    }
 }

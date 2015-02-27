@@ -4,19 +4,19 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import fr.braindead.wsmsgbroker.actions.client.*;
-import fr.braindead.wsmsgbroker.callback.*;
+import fr.braindead.wsmsgbroker.callback.AnswerCallback;
 import fr.braindead.wsmsgbroker.protocol.Register;
 import fr.braindead.wsmsgbroker.protocol.Send;
 import fr.braindead.wsmsgbroker.protocol.Unregister;
-import org.java_websocket.WebSocket;
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
+import io.undertow.websockets.client.WebSocketClient;
+import io.undertow.websockets.core.*;
+import org.xnio.*;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -30,7 +30,7 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
     private String host;
     private int port;
     private String path;
-    private WebSocketClient client;
+    private WebSocketChannel client;
     // Event maps
     private Map<String, ClientAction> actions = new HashMap<>();
     private Map<String, AnswerCallback> ack2callback = new HashMap<>();
@@ -90,53 +90,72 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
     public void close() {
         scheduledThreadPool.shutdownNow();
         if (this.client != null) {
-            this.client.close();
+            try {
+                this.client.close();
+            } catch (IOException e) {
+                onError(e);
+            }
         }
     }
 
     @Override
     public void run() {
-        if (client == null) {
-            createClient();
-        } else {
-            if (!client.getReadyState().equals(WebSocket.READYSTATE.OPEN)) {
+        try {
+            if (client == null) {
                 createClient();
+            } else {
+                if (!client.isOpen()) {
+                    createClient();
+                }
             }
+        } catch (IOException e) {
+            onError(e);
         }
     }
 
-    private void createClient() {
+    private void createClient() throws IOException {
         // create WebSocket client
-        client = new WebSocketClient(URI.create("ws://" + host + ":" + port + path)) {
-            @Override
-            public void onOpen(ServerHandshake serverHandshake) {
-                Register r = new Register();
-                r.setId(WSMsgBrokerClient.this.id);
-                this.send(new Gson().toJson(r));
-            }
+        Xnio xnio = Xnio.getInstance(io.undertow.websockets.client.WebSocketClient.class.getClassLoader());
+        XnioWorker worker = xnio.createWorker(OptionMap.builder()
+                .set(Options.WORKER_IO_THREADS, 2)
+                .set(Options.CONNECTION_HIGH_WATER, 1000000)
+                .set(Options.CONNECTION_LOW_WATER, 1000000)
+                .set(Options.WORKER_TASK_CORE_THREADS, 30)
+                .set(Options.WORKER_TASK_MAX_THREADS, 30)
+                .set(Options.TCP_NODELAY, true)
+                .set(Options.CORK, true)
+                .getMap());
+        ByteBufferSlicePool buffer = new ByteBufferSlicePool(BufferAllocator.BYTE_BUFFER_ALLOCATOR, 1024, 1024);
+        URI uri = URI.create("ws://" + host + ":" + port + path);
 
+        client = WebSocketClient.connect(worker, buffer, OptionMap.EMPTY, uri, WebSocketVersion.V13).get();
+        client.getReceiveSetter().set(new AbstractReceiveListener() {
             @Override
-            public void onMessage(String s) {
-                JsonObject obj = (JsonObject) new JsonParser().parse(s);
+            protected void onFullTextMessage(WebSocketChannel channel, BufferedTextMessage message) throws IOException {
+                String msg = message.getData();
+                JsonObject obj = (JsonObject) new JsonParser().parse(msg);
                 ClientAction action = actions.get(obj.getAsJsonPrimitive("action").getAsString());
                 if (action != null) {
-                    action.execute(WSMsgBrokerClient.this, this, obj);
+                    action.execute(WSMsgBrokerClient.this, client, obj);
                 }
                 // TODO handle errors
             }
 
             @Override
-            public void onClose(int code, String reason, boolean remote) {
-                WSMsgBrokerClient.this.onClose(code, reason, remote);
+            protected void onError(WebSocketChannel channel, Throwable error) {
+                WSMsgBrokerClient.this.onError(new Exception(error));
+                try {
+                    client.close();
+                } catch (IOException e) {
+                    WSMsgBrokerClient.this.onError(e);
+                }
             }
+        });
+        client.resumeReceives();
 
-            @Override
-            public void onError(Exception e) {
-                WSMsgBrokerClient.this.onError(e);
-            }
-        };
-
-        client.connect();
+        Register r = new Register();
+        r.setId(id);
+        WebSockets.sendText(new Gson().toJson(r), client, null);
     }
 
     @Override
@@ -160,7 +179,9 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
         Send s = new Send();
         s.setMessage(data);
         s.setDest(dest);
-        this.client.send(new Gson().toJson(s));
+        if (this.client != null && this.client.isOpen()) {
+            WebSockets.sendText(new Gson().toJson(s), this.client, null);
+        }
     }
 
     @Override
@@ -180,15 +201,17 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
         s.setMessage(data);
         s.setDest(dest);
         s.setAck(generateAck(callback));
-        this.client.send(new Gson().toJson(s));
+        if (this.client != null && this.client.isOpen()) {
+            WebSockets.sendText(new Gson().toJson(s), this.client, null);
+        }
     }
 
     @Override
     public void unregister() {
         Unregister u = new Unregister();
         u.setId(id);
-        if (this.client != null) {
-            this.client.send(new Gson().toJson(u));
+        if (this.client != null && this.client.isOpen()) {
+            WebSockets.sendText(new Gson().toJson(u), this.client, null);
         }
     }
 

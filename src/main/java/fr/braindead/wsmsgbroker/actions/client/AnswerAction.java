@@ -5,7 +5,7 @@ import com.google.gson.JsonObject;
 import fr.braindead.wsmsgbroker.callback.AnswerCallback;
 import fr.braindead.wsmsgbroker.WSMsgBrokerClient;
 import fr.braindead.wsmsgbroker.protocol.Answer;
-import org.java_websocket.client.WebSocketClient;
+import io.undertow.websockets.core.WebSocketChannel;
 
 /**
  * Created by leiko on 30/10/14.
@@ -13,7 +13,7 @@ import org.java_websocket.client.WebSocketClient;
 public class AnswerAction implements ClientAction {
 
     @Override
-    public void execute(WSMsgBrokerClient client, WebSocketClient ws, JsonObject msg) {
+    public void execute(WSMsgBrokerClient client, WebSocketChannel ws, JsonObject msg) {
         Answer a = new Gson().fromJson(msg, Answer.class);
         AnswerCallback callback = client.getAnswerCallback(a.getAck());
         if (callback != null) {

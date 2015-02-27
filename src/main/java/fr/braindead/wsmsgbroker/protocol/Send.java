@@ -1,8 +1,5 @@
 package fr.braindead.wsmsgbroker.protocol;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import fr.braindead.wsmsgbroker.actions.client.Action;
 
 /**
@@ -37,16 +34,5 @@ public class Send {
 
     public void setDest(String[] dest) {
         this.dest = dest;
-    }
-
-    public static void main(String[] args) {
-        Send s = new Send();
-        JsonObject o = new JsonObject();
-        o.add("foo", new JsonPrimitive("bar"));
-        s.setMessage(o);
-        s.setAck("azerty");
-        s.setDest(new String[] {"client0"});
-        String jsonStr = new Gson().toJson(s);
-        System.out.println(jsonStr);
     }
 }
