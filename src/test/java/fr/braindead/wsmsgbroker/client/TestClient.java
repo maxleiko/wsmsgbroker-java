@@ -39,8 +39,8 @@ public class TestClient {
             }
 
             @Override
-            public void onClose(int code, String reason, boolean remote) {
-                System.out.println("client0 closed " + code + ", " + reason + ", " + remote);
+            public void onClose(int code, String reason) {
+                System.out.println("client0 closed " + code + ", " + reason);
             }
         };
 
@@ -69,8 +69,8 @@ public class TestClient {
             }
 
             @Override
-            public void onClose(int code, String reason, boolean remote) {
-                System.out.println("client1 closed "+code+", "+reason+", "+remote);
+            public void onClose(int code, String reason) {
+                System.out.println("client1 closed "+code+", "+reason);
             }
         };
     }

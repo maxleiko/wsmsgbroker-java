@@ -42,9 +42,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-core</artifactId>
-            <version>1.2.0.Beta8</version>
+            <groupId>fr.braindead</groupId>
+            <artifactId>websocket-client</artifactId>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -121,10 +121,5 @@
             <id>sonatype-nexus-snapshots</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
-        <!--<snapshotRepository>-->
-            <!--<id>archiva.braindead.snapshots</id>-->
-            <!--<name>Braindead Archiva Snapshot Repository</name>-->
-            <!--<url>http://archiva.braindead.fr/repository/snapshots/</url>-->
-        <!--</snapshotRepository>-->
     </distributionManagement>
 </project>

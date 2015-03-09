@@ -3,14 +3,12 @@ package fr.braindead.wsmsgbroker;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import fr.braindead.websocket.client.WebSocketClient;
 import fr.braindead.wsmsgbroker.actions.client.*;
 import fr.braindead.wsmsgbroker.callback.AnswerCallback;
 import fr.braindead.wsmsgbroker.protocol.Register;
 import fr.braindead.wsmsgbroker.protocol.Send;
 import fr.braindead.wsmsgbroker.protocol.Unregister;
-import io.undertow.websockets.client.WebSocketClient;
-import io.undertow.websockets.core.*;
-import org.xnio.*;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Created by leiko on 31/10/14.
+ *
  */
 public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable {
 
@@ -30,7 +29,7 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
     private String host;
     private int port;
     private String path;
-    private WebSocketChannel client;
+    private WebSocketClient client;
     // Event maps
     private Map<String, ClientAction> actions = new HashMap<>();
     private Map<String, AnswerCallback> ack2callback = new HashMap<>();
@@ -115,47 +114,34 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
 
     private void createClient() throws IOException {
         // create WebSocket client
-        Xnio xnio = Xnio.getInstance(io.undertow.websockets.client.WebSocketClient.class.getClassLoader());
-        XnioWorker worker = xnio.createWorker(OptionMap.builder()
-                .set(Options.WORKER_IO_THREADS, 2)
-                .set(Options.CONNECTION_HIGH_WATER, 1000000)
-                .set(Options.CONNECTION_LOW_WATER, 1000000)
-                .set(Options.WORKER_TASK_CORE_THREADS, 30)
-                .set(Options.WORKER_TASK_MAX_THREADS, 30)
-                .set(Options.TCP_NODELAY, true)
-                .set(Options.CORK, true)
-                .getMap());
-        ByteBufferSlicePool buffer = new ByteBufferSlicePool(BufferAllocator.BYTE_BUFFER_ALLOCATOR, 1024, 1024);
         URI uri = URI.create("ws://" + host + ":" + port + path);
-
-        client = WebSocketClient.connect(worker, buffer, OptionMap.EMPTY, uri, WebSocketVersion.V13).get();
-        client.getReceiveSetter().set(new AbstractReceiveListener() {
+        client = new WebSocketClient(uri) {
             @Override
-            protected void onFullTextMessage(WebSocketChannel channel, BufferedTextMessage message) throws IOException {
-                String msg = message.getData();
+            public void onOpen() {
+                Register r = new Register();
+                r.setId(id);
+                client.send(new Gson().toJson(r));
+            }
+
+            @Override
+            public void onMessage(String msg) {
                 JsonObject obj = (JsonObject) new JsonParser().parse(msg);
                 ClientAction action = actions.get(obj.getAsJsonPrimitive("action").getAsString());
                 if (action != null) {
                     action.execute(WSMsgBrokerClient.this, client, obj);
                 }
-                // TODO handle errors
             }
 
             @Override
-            protected void onError(WebSocketChannel channel, Throwable error) {
-                WSMsgBrokerClient.this.onError(new Exception(error));
-                try {
-                    client.close();
-                } catch (IOException e) {
-                    WSMsgBrokerClient.this.onError(e);
-                }
+            public void onClose(int i, String s) {
+                WSMsgBrokerClient.this.onClose(i, s);
             }
-        });
-        client.resumeReceives();
 
-        Register r = new Register();
-        r.setId(id);
-        WebSockets.sendText(new Gson().toJson(r), client, null);
+            @Override
+            public void onError(Exception e) {
+                WSMsgBrokerClient.this.onError(e);
+            }
+        };
     }
 
     @Override
@@ -180,7 +166,7 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
         s.setMessage(data);
         s.setDest(dest);
         if (this.client != null && this.client.isOpen()) {
-            WebSockets.sendText(new Gson().toJson(s), this.client, null);
+            this.client.send(new Gson().toJson(s));
         }
     }
 
@@ -202,7 +188,7 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
         s.setDest(dest);
         s.setAck(generateAck(callback));
         if (this.client != null && this.client.isOpen()) {
-            WebSockets.sendText(new Gson().toJson(s), this.client, null);
+            this.client.send(new Gson().toJson(s));
         }
     }
 
@@ -211,7 +197,7 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
         Unregister u = new Unregister();
         u.setId(id);
         if (this.client != null && this.client.isOpen()) {
-            WebSockets.sendText(new Gson().toJson(u), this.client, null);
+            this.client.send(new Gson().toJson(u));
         }
     }
 
@@ -242,5 +228,5 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
 
     public abstract void onError(Exception e);
 
-    public abstract void onClose(int code, String reason, boolean remote);
+    public abstract void onClose(int code, String reason);
 }

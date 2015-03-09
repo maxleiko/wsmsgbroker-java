@@ -2,11 +2,11 @@ package fr.braindead.wsmsgbroker.actions.client;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import fr.braindead.websocket.client.WebSocketClient;
 import fr.braindead.wsmsgbroker.Response;
 import fr.braindead.wsmsgbroker.WSMsgBrokerClient;
 import fr.braindead.wsmsgbroker.protocol.Answer;
 import fr.braindead.wsmsgbroker.protocol.Message;
-import io.undertow.websockets.core.WebSocketChannel;
 import io.undertow.websockets.core.WebSockets;
 
 /**
@@ -16,7 +16,7 @@ import io.undertow.websockets.core.WebSockets;
 public class MessageAction implements ClientAction {
 
     @Override
-    public void execute(WSMsgBrokerClient client, WebSocketChannel ws, JsonObject msg) {
+    public void execute(WSMsgBrokerClient client, WebSocketClient ws, JsonObject msg) {
         Message m = new Gson().fromJson(msg, Message.class);
         Response r = null;
         if (m.getAck() != null) {
@@ -26,7 +26,7 @@ public class MessageAction implements ClientAction {
                 a.setFrom(client.getId());
                 a.setMessage(response);
                 if (ws != null && ws.isOpen()) {
-                    WebSockets.sendText(new Gson().toJson(a), ws, null);
+                    ws.send(new Gson().toJson(a));
                 }
             };
         }
