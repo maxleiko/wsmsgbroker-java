@@ -69,8 +69,11 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
         this.id = id;
         this.host = host;
         this.port = port;
+        
         if (!path.startsWith("/")) {
             this.path = "/" + path;
+        } else {
+        	this.path = path;
         }
 
         // register client actions
@@ -78,6 +81,7 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
         this.actions.put(Action.MESSAGE.toString(), new MessageAction());
         this.actions.put(Action.REGISTERED.toString(), new RegisteredAction());
         this.actions.put(Action.UNREGISTERED.toString(), new UnregisteredAction());
+        this.actions.put(Action.SEND.toString(), new MessageAction());
 
         if (autoReconnect) {
             scheduledThreadPool = Executors.newScheduledThreadPool(1);
