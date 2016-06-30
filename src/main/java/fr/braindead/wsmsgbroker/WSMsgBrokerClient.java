@@ -3,6 +3,7 @@ package fr.braindead.wsmsgbroker;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import fr.braindead.websocket.client.WebSocketClient;
 import fr.braindead.wsmsgbroker.actions.client.*;
 import fr.braindead.wsmsgbroker.callback.AnswerCallback;
@@ -126,9 +127,16 @@ public abstract class WSMsgBrokerClient implements IWSMsgBrokerClient, Runnable 
             @Override
             public void onMessage(String msg) {
                 JsonObject obj = (JsonObject) new JsonParser().parse(msg);
-                ClientAction action = actions.get(obj.getAsJsonPrimitive("action").getAsString());
-                if (action != null) {
-                    action.execute(WSMsgBrokerClient.this, client, obj);
+                JsonPrimitive rawAction = obj.getAsJsonPrimitive("action");
+                if (rawAction != null) {
+                    ClientAction action = actions.get(rawAction.getAsString());
+                    if (action != null) {
+                        action.execute(WSMsgBrokerClient.this, client, obj);
+                    } else {
+                        WSMsgBrokerClient.this.onError(new Exception("Unknown action '"+rawAction.getAsString()+"'"));
+                    }
+                } else {
+                    WSMsgBrokerClient.this.onError(new Exception("Unable to parse received message from server"));
                 }
             }
 

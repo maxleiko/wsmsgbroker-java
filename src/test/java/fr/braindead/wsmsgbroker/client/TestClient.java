@@ -2,8 +2,10 @@ package fr.braindead.wsmsgbroker.client;
 
 import fr.braindead.wsmsgbroker.Response;
 import fr.braindead.wsmsgbroker.WSMsgBrokerClient;
+import fr.braindead.wsmsgbroker.callback.AnswerCallback;
 
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * Created by leiko on 30/10/14.
@@ -75,15 +77,76 @@ public class TestClient {
         };
     }
 
+    public void another() throws Exception {
+        new WSMsgBrokerClient("client0", "localhost", 9050) {
+            @Override
+            public void onUnregistered(String id) {
+                System.out.println(this.getId()+" unregistered");
+            }
+
+            @Override
+            public void onRegistered(String id) {
+                System.out.println(this.getId()+" registered");
+                this.send("foo", "client1", (from, answer) -> {
+                    System.out.println(this.getId()+" response: "+answer+" ("+from+")");
+                });
+            }
+
+            @Override
+            public void onMessage(Object msg, Response res) {
+                System.out.println(this.getId()+" message: "+msg);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                System.out.println("error: "+e.getMessage());
+            }
+
+            @Override
+            public void onClose(int code, String reason) {
+                System.out.println("closed: "+code);
+            }
+        };
+
+        new WSMsgBrokerClient("client1", "localhost", 9050) {
+            @Override
+            public void onUnregistered(String id) {
+                System.out.println(this.getId()+" unregistered");
+            }
+
+            @Override
+            public void onRegistered(String id) {
+                System.out.println(this.getId()+" registered");
+            }
+
+            @Override
+            public void onMessage(Object msg, Response res) {
+                System.out.println(this.getId()+" message: "+msg);
+                res.send("response!");
+                this.send("bar", "client0");
+            }
+
+            @Override
+            public void onError(Exception e) {
+                System.out.println("error: "+e.getMessage());
+            }
+
+            @Override
+            public void onClose(int code, String reason) {
+                System.out.println("closed: "+code);
+            }
+        };
+    }
+
     public void stop() {
         client0.unregister();
         client1.unregister();
     }
 
     // TODO do some clean JUnit tests
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws Exception {
         TestClient tester = new TestClient();
-        tester.test();
+        tester.another();
 //        new Thread(() -> {
 //            try {
 //                Thread.sleep(2000);
