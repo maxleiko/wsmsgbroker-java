@@ -45,12 +45,12 @@
 		<dependency>
 			<groupId>fr.braindead</groupId>
 			<artifactId>websocket-client</artifactId>
-			<version>1.0.0</version>
+			<version>1.0.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
-			<version>2.3</version>
+			<version>2.7</version>
 		</dependency>
 	</dependencies>
 
@@ -110,7 +110,7 @@
 		<profile>
 			<id>production</id>
 			<activation>
-				<activeByDefault>true</activeByDefault>
+				<activeByDefault>false</activeByDefault>
 			</activation>
 			<build>
 				<plugins>
